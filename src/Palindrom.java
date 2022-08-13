@@ -13,7 +13,7 @@ public class Palindrom {
 
         for(int i = 0; i < word.length(); i++){
             char c = word.charAt(word.length() - (i + 1));
-            if(word.charAt(i) == c){
+            if(word.charAt(i) != c){
                 result = "IT'S NOT A PALYNDROM";
                 break;
             }
