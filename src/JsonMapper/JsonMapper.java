@@ -2,15 +2,19 @@ package JsonMapper;
 
 import Data.Address;
 import Data.Employee;
+import Data.Movie;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Objects;
 
 public class JsonMapper {
 
     public static void main(String[] args) throws IllegalAccessException {
+        Movie[] favoriteMovies = {new Movie("The Lord of the rings", 8.8f), new Movie("The Avengers", 6.0f)};
+        String[] hobbies = {"Photograph", "Videogames", "Youtube"};
         Address address =  new Address("Street 1", null, 49069);
-        Employee employee = new Employee("Jhon", "Wick", "Developer", 200.3f, true, address);
+        Employee employee = new Employee("Jhon", "Wick", "Developer", 200.3f, true, address, hobbies, favoriteMovies);
 
         System.out.println(objectToJson(employee, 0));
     }
@@ -19,7 +23,6 @@ public class JsonMapper {
         Field[] fields = instance.getClass().getDeclaredFields();
         StringBuilder json = new StringBuilder();
 
-        json.append(indentString(indentSize));
         json.append("{");
         json.append("\n");
 
@@ -35,11 +38,13 @@ public class JsonMapper {
 
             field.setAccessible(true);
             if(field.getType().isPrimitive()) {
-                json.append(formatPrimitive(field, instance));
+                json.append(formatPrimitive(field.get(instance), field.getType()));
             } else if (String.class.equals(field.getType())) {
                 json.append(formatString(field, instance));
+            } else if (field.getType().isArray()) {
+                json.append(arrayToJson(field.get(instance), indentSize + 1));
             } else {
-                json.append(objectToJson(field.get(instance), indentSize+1));
+                json.append(objectToJson(field.get(instance), indentSize + 1));
             }
 
             if(i != (fields.length-1)) {
@@ -62,17 +67,49 @@ public class JsonMapper {
         return builder.toString();
     }
 
-    private static String formatPrimitive(Field field, Object parentInstance) throws IllegalAccessException {
-        if (boolean.class.equals(field.getType())
-        || int.class.equals(field.getType())
-        || long.class.equals(field.getType())
-        || short.class.equals(field.getType())) {
-            return field.get(parentInstance).toString();
-        } else if (double.class.equals(field.getType()) || float.class.equals(field.getType())) {
-            return String.format("%.02f", field.get(parentInstance));
+    private static String arrayToJson(Object arrayInstance, int indentSize) throws IllegalAccessException {
+        StringBuilder builder = new StringBuilder();
+        int arrayLength = Array.getLength(arrayInstance);
+        Class<?> arrayType = arrayInstance.getClass().getComponentType();
+
+        builder.append("[");
+        builder.append("\n");
+
+        for(int i = 0; i < arrayLength; i++) {
+            Object value = Array.get(arrayInstance, i);
+
+            builder.append(indentString(indentSize + 1));
+            if(arrayType.isPrimitive()) {
+                builder.append(formatPrimitive(value, arrayType));
+            } else if (String.class.equals(arrayType)) {
+                builder.append(formatString(value.toString()));
+            } else {
+                builder.append(objectToJson(value, indentSize + 1));
+            }
+
+            if(i != arrayLength - 1) {
+                builder.append(",");
+            }
+            builder.append("\n");
         }
 
-        throw new RuntimeException(String.format("Type : %s is unsupported", field.getType().getName()));
+        builder.append(indentString(indentSize));
+        builder.append("]");
+
+        return builder.toString();
+    }
+
+    private static String formatPrimitive(Object instance, Class<?> type) throws IllegalAccessException {
+        if (boolean.class.equals(type)
+        || int.class.equals(type)
+        || long.class.equals(type)
+        || short.class.equals(type)) {
+            return instance.toString();
+        } else if (double.class.equals(type) || float.class.equals(type)) {
+            return String.format("%.02f", instance);
+        }
+
+        throw new RuntimeException(String.format("Type : %s is unsupported", type.getTypeName()));
     }
 
     private static String formatString(Field field, Object parentInstance) throws IllegalAccessException {

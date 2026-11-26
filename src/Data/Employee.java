@@ -7,14 +7,25 @@ public class Employee {
     public float salary;
     public boolean isActive;
     public Address address;
+    private final String[] hobbies;
+    private final Movie[] favoriteMovies;
 
-    public Employee(String name, String lastname, String jobRole, float salary, boolean isActive, Address address) {
+    public Employee(String name,
+                    String lastname,
+                    String jobRole,
+                    float salary,
+                    boolean isActive,
+                    Address address,
+                    String[] hobbies,
+                    Movie[] movies) {
         this.name = name;
         this.lastname = lastname;
         this.jobRole = jobRole;
         this.salary = salary;
         this.isActive = isActive;
         this.address = address;
+        this.hobbies= hobbies;
+        this.favoriteMovies = movies;
     }
 
     public String getName() {
